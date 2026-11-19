@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zach Whitlock, K = 29: explore his articles</title>
+<style>
+  :root { --bg:#0a0a0e; --fg:#f5f2eb; --mut:#a09ea5; --line:#2a2a32; --acc:#f5b82e; --chip:#16161c; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:Lato,"Helvetica Neue",Arial,sans-serif; }
+  .app { display:grid; grid-template-columns:minmax(0,1fr) 400px; height:100vh; }
+  .left { display:flex; flex-direction:column; min-width:0; min-height:0; border-right:1px solid var(--line); }
+  .bar { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; padding:10px 14px; border-bottom:1px solid var(--line); }
+  .bar h1 { font-size:1.05rem; font-weight:900; margin:0 auto 0 0; white-space:nowrap; }
+  .bar h1 span { color:var(--acc); }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:var(--chip); }
+  .seg button { appearance:none; border:0; background:transparent; color:var(--fg); font:inherit; font-size:.85rem; font-weight:700; padding:6px 12px; cursor:pointer; }
+  .seg button[aria-pressed="true"] { background:var(--acc); color:#141418; }
+  input[type=search] { background:var(--chip); border:1px solid var(--line); color:var(--fg); border-radius:999px; padding:6px 12px; font:inherit; font-size:.85rem; width:150px; }
+  button:focus-visible, input:focus-visible, a:focus-visible { outline:2px solid var(--fg); outline-offset:1px; }
+  .scroll { flex:1; overflow:auto; min-height:0; }
+  .stage { position:relative; margin:0 auto; cursor:crosshair; }
+  .stage img, .stage canvas { position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .stage canvas { pointer-events:none; }
+  #tip { position:fixed; pointer-events:none; background:var(--fg); color:var(--bg); font-weight:900; font-size:.8rem; letter-spacing:.04em; padding:4px 8px; border-radius:4px; display:none; z-index:5; text-transform:uppercase; }
+  aside { display:flex; flex-direction:column; min-height:0; }
+  .tabs { display:flex; border-bottom:1px solid var(--line); }
+  .tabs button { flex:1; appearance:none; border:0; border-bottom:3px solid transparent; background:transparent; color:var(--mut); font:inherit; font-weight:900; font-size:.8rem; letter-spacing:.1em; text-transform:uppercase; padding:13px 8px 10px; cursor:pointer; }
+  .tabs button[aria-selected="true"] { color:var(--fg); border-bottom-color:var(--acc); }
+  #panel { flex:1; overflow:auto; padding:16px 18px 28px; }
+  .hint { color:var(--mut); line-height:1.5; font-size:.9rem; margin:0 0 14px; }
+  .back { appearance:none; border:1px solid var(--line); background:var(--chip); color:var(--fg); font:inherit; font-size:.8rem; font-weight:700; border-radius:999px; padding:5px 12px; cursor:pointer; margin-bottom:14px; }
+  .big { font-size:1.9rem; font-weight:900; text-transform:uppercase; letter-spacing:.02em; margin:0 0 4px; overflow-wrap:anywhere; }
+  .ttl { font-size:1.15rem; font-weight:900; line-height:1.3; margin:0 0 6px; }
+  .meta { color:var(--mut); font-size:.82rem; line-height:1.4; margin:0 0 12px; }
+  .stat { color:var(--mut); font-size:.86rem; line-height:1.45; margin:0 0 14px; }
+  .tag { display:inline-block; background:var(--acc); color:#141418; font-weight:900; font-size:.64rem; letter-spacing:.06em; text-transform:uppercase; padding:1px 6px; border-radius:3px; margin-right:6px; vertical-align:middle; }
+  h2 { font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--mut); margin:18px 0 8px; font-weight:700; }
+  ul.list { list-style:none; margin:0; padding:0; }
+  ul.list li { border-top:1px solid var(--line); }
+  .row { display:block; width:100%; text-align:left; appearance:none; border:0; background:transparent; color:var(--fg); font:inherit; padding:10px 0; cursor:pointer; }
+  .row:hover .t { text-decoration:underline; }
+  .row .t { font-weight:700; font-size:.9rem; line-height:1.3; }
+  .row .m { color:var(--mut); font-size:.76rem; margin:3px 0 6px; line-height:1.35; }
+  .barrow { display:flex; align-items:center; gap:8px; }
+  .track { flex:1; height:7px; background:var(--chip); border-radius:4px; overflow:hidden; }
+  .fill { height:100%; border-radius:4px; background:var(--acc); }
+  .n { font-variant-numeric:tabular-nums; font-size:.76rem; font-weight:700; min-width:44px; text-align:right; color:var(--mut); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { appearance:none; border:1px solid var(--line); background:var(--chip); color:var(--fg); font:inherit; font-size:.78rem; font-weight:700; border-radius:999px; padding:4px 10px; cursor:pointer; text-transform:uppercase; letter-spacing:.03em; display:inline-flex; align-items:center; gap:6px; }
+  .chip:hover { border-color:var(--fg); }
+  .sw { width:11px; height:11px; border-radius:2px; flex:0 0 auto; border:1px solid rgba(255,255,255,.25); }
+  .tgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .tgrid .chip { justify-content:flex-start; border-radius:6px; padding:7px 9px; }
+  @media (max-width:860px) {
+    .app { grid-template-columns:1fr; grid-template-rows:55vh 1fr; }
+    .left { border-right:0; border-bottom:1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="left">
+    <div class="bar">
+      <h1>ZACH WHITLOC<span>K = 29</span></h1>
+      <input type="search" id="q" placeholder="Find a word" aria-label="Find a word">
+      <div class="seg" id="zoom" aria-label="Zoom">
+        <button data-v="1">Fit</button><button data-v="2">2×</button><button data-v="4">4×</button>
+      </div>
+    </div>
+    <div class="scroll" id="scroll">
+      <div class="stage" id="stage">
+        <img id="img" src="zach.jpg" alt="Typographic portrait of Zach Whitlock built from the words of his publications">
+        <canvas id="cv"></canvas>
+      </div>
+    </div>
+  </div>
+  <aside>
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="articles">Articles</button>
+      <button role="tab" data-tab="topics">Topics</button>
+    </div>
+    <div id="panel" aria-live="polite"></div>
+  </aside>
+</div>
+<div id="tip"></div>
+<script src="data.js"></script>
+<script>
+  var D = window.DATA, NP = D.pubs.length;
+  var view = { tab: 'articles', kind: 'home', id: null }, zoom = 1, lit = null;   // lit: Float32Array of 0..1 per cell, or null
+  var stage = document.getElementById('stage'), cv = document.getElementById('cv'), scroll = document.getElementById('scroll'),
+      panel = document.getElementById('panel'), tip = document.getElementById('tip');
+
+  // ---- indexes ----
+  var byWord = {}, wordTopic = {}, wordTotal = {};
+  D.cells.forEach(function (c, i) { (byWord[c[4]] = byWord[c[4]] || []).push(i); wordTopic[c[4]] = c[5]; });
+  var share = [];                       // share[p][word] = fraction of that word's uses that come from publication p
+  for (var p = 0; p < NP; p++) share.push({});
+  Object.keys(D.words).forEach(function (w) {
+    var tot = D.words[w].reduce(function (s, r) { return s + r[1]; }, 0); wordTotal[w] = tot;
+    D.words[w].forEach(function (r) { share[r[0]][w] = r[1] / tot; });
+  });
+  var pubCells = D.pubs.map(function (_, p) {      // portrait cells this publication mostly supplies
+    var n = 0; D.cells.forEach(function (c) { if ((share[p][c[4]] || 0) >= 0.5) n++; }); return n;
+  });
+  var maxPubCells = Math.max.apply(null, pubCells);
+
+  function rgb(a) { return 'rgb(' + a.join(',') + ')'; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function swatch(t) { return '<span class="sw" style="background:' + rgb(D.col[t]) + '"></span>'; }
+  function pct(x) { return Math.round(x * 100) + '%'; }
+
+  // ---- portrait ----
+  function layout() {
+    var fitW = Math.min(scroll.clientWidth, scroll.clientHeight * D.W / D.H);
+    var w = Math.max(200, Math.floor(fitW * zoom));
+    stage.style.width = w + 'px'; stage.style.height = Math.round(w * D.H / D.W) + 'px';
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(w * dpr); cv.height = Math.round(w * D.H / D.W * dpr);
+    draw();
+  }
+  function draw() {
+    var g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height);
+    if (!lit) return;
+    var s = cv.width / D.W;
+    g.fillStyle = 'rgba(0,0,0,.78)'; g.fillRect(0, 0, cv.width, cv.height);
+    for (var i = 0; i < D.cells.length; i++) {
+      var v = lit[i]; if (!v) continue;
+      var c = D.cells[i], x = c[0] * s, y = c[1] * s, w = c[2] * s, h = c[3] * s;
+      g.clearRect(x, y, w, h);
+      if (v < 1) { g.fillStyle = 'rgba(0,0,0,' + (0.6 * (1 - v)).toFixed(2) + ')'; g.fillRect(x, y, w, h); }
+    }
+  }
+  function light(fn) { lit = new Float32Array(D.cells.length); for (var i = 0; i < D.cells.length; i++) lit[i] = fn(D.cells[i]) || 0; draw(); }
+  function cellAt(e) {
+    var r = stage.getBoundingClientRect(), s = D.W / r.width, x = (e.clientX - r.left) * s, y = (e.clientY - r.top) * s;
+    for (var i = D.cells.length - 1; i >= 0; i--) { var c = D.cells[i]; if (x >= c[0] && x < c[0] + c[2] && y >= c[1] && y < c[1] + c[3]) return c; }
+    return null;
+  }
+
+  // ---- views ----
+  function go(kind, id) { view.kind = kind; view.id = id; render(); panel.scrollTop = 0; }
+  function pubRow(p, value, max, label) {
+    var d = D.pubs[p];
+    return '<li><button class="row" data-go="pub" data-id="' + p + '"><div class="t">' + esc(d.title) + '</div><div class="m">' +
+      (d.pos === 1 ? '<span class="tag">First author</span>' : '') + esc(d.authors) + ' · ' + esc(d.venue) + '</div>' +
+      '<div class="barrow"><div class="track"><div class="fill" style="width:' + Math.max(2, value / max * 100) + '%"></div></div><div class="n">' + label + '</div></div></button></li>';
+  }
+  function topicChip(t, extra) { return '<button class="chip" data-go="topic" data-id="' + t + '">' + swatch(t) + esc(D.tnames[t]) + (extra ? ' <span style="color:var(--mut);font-weight:400">' + extra + '</span>' : '') + '</button>'; }
+  function wordChip(w) { return '<button class="chip" data-go="word" data-id="' + esc(w) + '">' + swatch(wordTopic[w]) + esc(w) + '</button>'; }
+
+  function render() {
+    document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-selected', b.dataset.tab === view.tab); });
+    var h = '';
+    if (view.kind === 'home' && view.tab === 'articles') {
+      lit = null; draw();
+      h = '<p class="hint">The portrait is built from the words of Zach’s ' + NP + ' publications. <b>Pick an article</b> to light up the words it supplies, or <b>click any word</b> in the portrait to see where it comes from.</p><ul class="list">';
+      D.pubs.forEach(function (_, p) { h += pubRow(p, pubCells[p], maxPubCells, pubCells[p].toLocaleString() + ' spots'); });
+      h += '</ul>';
+    } else if (view.kind === 'home') {
+      lit = null; draw();
+      h = '<p class="hint">The 29 topics, from fossil fuels to clean technology. <b>Pick one</b> to see its region of the portrait, its words and the articles behind it.</p><div class="tgrid">';
+      D.order.forEach(function (t) { h += topicChip(t, pct(D.shares[t])); });
+      h += '</div>';
+    } else if (view.kind === 'pub') {
+      var p = view.id, d = D.pubs[p], sh = share[p];
+      light(function (c) { var v = sh[c[4]] || 0; return v >= 0.5 ? 1 : v >= 0.25 ? 0.45 : 0; });
+      var ws = Object.keys(sh), own = ws.filter(function (w) { return sh[w] >= 0.5; });
+      own.sort(function (a, b) { return sh[b] * Math.log(1 + wordTotal[b]) - sh[a] * Math.log(1 + wordTotal[a]); });
+      var mix = {}; D.cells.forEach(function (c) { if ((sh[c[4]] || 0) >= 0.5) mix[c[5]] = (mix[c[5]] || 0) + 1; });
+      var tops = Object.keys(mix).sort(function (a, b) { return mix[b] - mix[a]; }).slice(0, 6);
+      h = '<button class="back" data-go="home">← All articles</button><p class="ttl">' + esc(d.title) + '</p><p class="meta">' +
+        (d.pos === 1 ? '<span class="tag">First author</span>' : '') + esc(d.authors) + ' · ' + esc(d.venue) + '</p>' +
+        '<p class="stat">' + ws.length.toLocaleString() + ' of the portrait’s ' + Object.keys(D.words).length.toLocaleString() + ' words appear in this article. ' +
+        'It supplies most of the uses of ' + own.length.toLocaleString() + ' of them, which fill ' + pubCells[p].toLocaleString() + ' spots in the portrait (lit brightly). Fainter spots are words it shares with other articles.</p>';
+      if (tops.length) { h += '<h2>Where it shows up</h2><div class="chips">'; tops.forEach(function (t) { h += topicChip(+t, mix[t] + ' spots'); }); h += '</div>'; }
+      h += '<h2>Its most distinctive words</h2><div class="chips">'; own.slice(0, 36).forEach(function (w) { h += wordChip(w); });
+      h += (own.length ? '' : '<span class="hint">None: every word it uses is used more elsewhere.</span>') + '</div>';
+    } else if (view.kind === 'topic') {
+      var t = view.id; light(function (c) { return c[5] === t ? 1 : 0; });
+      var tw = Object.keys(wordTopic).filter(function (w) { return wordTopic[w] === t; });
+      tw.sort(function (a, b) { return byWord[b].length - byWord[a].length; });
+      var per = D.pubs.map(function () { return 0; });
+      tw.forEach(function (w) { D.words[w].forEach(function (r) { per[r[0]] += r[1]; }); });
+      var ord = per.map(function (v, i) { return i; }).filter(function (i) { return per[i] > 0; }).sort(function (a, b) { return per[b] - per[a]; });
+      h = '<button class="back" data-go="home">← All topics</button><p class="big" style="display:flex;align-items:center;gap:10px"><span class="sw" style="width:22px;height:22px;background:' + rgb(D.col[t]) + '"></span>' + esc(D.tnames[t]) + '</p>' +
+        '<p class="stat">Topic ' + (D.order.indexOf(t) + 1) + ' of 29 on the fossil-to-clean scale, about ' + pct(D.shares[t]) + ' of his writing. Top terms in the model: ' + esc(D.topics[t].join(', ')) + '.</p>' +
+        '<h2>Words in this region</h2><div class="chips">'; tw.slice(0, 40).forEach(function (w) { h += wordChip(w); });
+      h += '</div><h2>Articles behind it</h2><ul class="list">'; ord.forEach(function (i) { h += pubRow(i, per[i], per[ord[0]], per[i].toLocaleString() + '×'); }); h += '</ul>';
+    } else if (view.kind === 'word') {
+      var w = view.id, rows = (D.words[w] || []).slice().sort(function (a, b) { return b[1] - a[1]; });
+      if (!rows.length) { lit = null; draw(); h = '<button class="back" data-go="home">← Back</button><p class="big">' + esc(w) + '</p><p class="stat">That word isn’t in the portrait.</p>'; }
+      else {
+        light(function (c) { return c[4] === w ? 1 : 0; });
+        var tt = wordTopic[w];
+        h = '<button class="back" data-go="home">← Back</button><p class="big">' + esc(w) + '</p><p class="stat">Used ' + wordTotal[w].toLocaleString() + ' time' + (wordTotal[w] === 1 ? '' : 's') + ' across ' + rows.length + ' of ' + NP +
+          ' articles. Appears ' + byWord[w].length + ' time' + (byWord[w].length === 1 ? '' : 's') + ' in the portrait.</p><div class="chips">' + topicChip(tt) + '</div><h2>Articles that use it</h2><ul class="list">';
+        rows.forEach(function (r) { h += pubRow(r[0], r[1], rows[0][1], r[1] + '×'); }); h += '</ul>';
+      }
+    }
+    panel.innerHTML = h;
+  }
+
+  // ---- events ----
+  panel.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-go]'); if (!b) return;
+    var k = b.dataset.go;
+    if (k === 'home') go('home', null);
+    else if (k === 'pub') { view.tab = 'articles'; go('pub', +b.dataset.id); }
+    else if (k === 'topic') { view.tab = 'topics'; go('topic', +b.dataset.id); }
+    else if (k === 'word') go('word', b.dataset.id);
+  });
+  document.querySelector('.tabs').addEventListener('click', function (e) { if (e.target.dataset.tab) { view.tab = e.target.dataset.tab; go('home', null); } });
+  stage.addEventListener('click', function (e) { var c = cellAt(e); if (c) go('word', c[4]); });
+  stage.addEventListener('mousemove', function (e) {
+    var c = cellAt(e); if (!c) { tip.style.display = 'none'; return; }
+    tip.textContent = c[4] + ' · ' + D.tnames[c[5]]; tip.style.display = 'block';
+    tip.style.left = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 6) + 'px'; tip.style.top = (e.clientY + 16) + 'px';
+  });
+  stage.addEventListener('mouseleave', function () { tip.style.display = 'none'; });
+  document.getElementById('zoom').addEventListener('click', function (e) {
+    if (!e.target.dataset.v) return;
+    var fx = (scroll.scrollLeft + scroll.clientWidth / 2) / scroll.scrollWidth, fy = (scroll.scrollTop + scroll.clientHeight / 2) / scroll.scrollHeight;
+    zoom = +e.target.dataset.v; syncZoom(); layout();
+    scroll.scrollLeft = fx * scroll.scrollWidth - scroll.clientWidth / 2; scroll.scrollTop = fy * scroll.scrollHeight - scroll.clientHeight / 2;
+  });
+  function syncZoom() { document.querySelectorAll('#zoom button').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.v === zoom); }); }
+  document.getElementById('q').addEventListener('input', function (e) {
+    var v = e.target.value.trim().toLowerCase();
+    if (!v) { go('home', null); return; }
+    var hit = byWord[v] ? v : Object.keys(byWord).filter(function (w) { return w.indexOf(v) === 0; }).sort(function (a, b) { return byWord[b].length - byWord[a].length; })[0];
+    go('word', hit || v);
+  });
+  window.addEventListener('resize', layout);
+  syncZoom(); layout(); render();
+</script>
+</body>
+</html>
